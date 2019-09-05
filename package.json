@@ -1,0 +1,31 @@
+{
+  "name": "cb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "pluswing Inc.",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^6.0.5",
+    "electron-builder": "^21.2.0"
+  },
+  "build": {
+    "appId": "your.id",
+    "mac": {
+      "category": "your.app.category.type",
+      "fileAssociations": [
+        {
+          "ext": "ipynb",
+          "name": "Jupyter Notebook",
+          "role": "Editor"
+        }
+      ]
+    }
+  }
+}

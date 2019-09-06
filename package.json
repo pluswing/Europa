@@ -1,5 +1,5 @@
 {
-  "name": "cb",
+  "name": "jupyter_app",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
@@ -16,14 +16,15 @@
     "electron-builder": "^21.2.0"
   },
   "build": {
-    "appId": "your.id",
+    "appId": "jp.co.pluswing.jupyer_app",
     "mac": {
-      "category": "your.app.category.type",
+      "category": "jp.co.pluswing.jupyer_app",
+      "icon": "resources/icons/jupyter_app.icns",
       "fileAssociations": [
         {
           "ext": "ipynb",
           "name": "Jupyter Notebook",
-          "role": "Editor"
+          "role": "Viewer"
         }
       ]
     }

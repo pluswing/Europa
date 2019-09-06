@@ -3,51 +3,110 @@ const fs = require('fs')
 const path = require('path')
 const childProcess = require('child_process')
 
-let win
-let processes = []
+let ready = false
+let openUrlFilePath = ""
+let win = null; // mainWindow
+
+// key: rootPath, value: {
+//    root: string,
+//    window: BrowserWindow,
+//    process: ChildProcess
+//    url: string,
+// }
+let windows = {}
+
+const findWindow = (filePath) => {
+    const rootLocation = findRootLocation(filePath)
+    return windows[rootLocation]
+}
 
 const findRootLocation = (filePath) => {
+    return _findRootLocation(filePath) || path.dirname(filePath)
+}
+
+const _findRootLocation = (filePath) => {
     if (filePath == '/') {
         return null
     }
     const dir = path.dirname(filePath)
     const files = fs.readdirSync(dir)
-    // 1. .git, requirements.txt, .ipynb_checkpoints
-    const matches = files.filter((f) => f in [".git", "requirements.txt", ".ipynb_checkpoints"])
-    if (matches) {
+    const matches = files.filter((f) => {
+        return [
+            ".git",
+            "requirements.txt"
+        ].includes(f)
+    })
+    if (matches.length) {
         return dir
     }
-    return findRootLocation(dir)
+    return _findRootLocation(dir)
 }
 
 const startNotebook = (filePath) => {
 
-    const rootLocation = findRootLocation(filePath) || path.dirname(filePath)
+    const w = findWindow(filePath)
+    if (w) {
+        openFile(w, filePath)
+        return
+    }
 
-    const cp = childProcess.spawn("jupyter", ["notebook"], {
-        cwd: rootLocation
-    })
-    processes.push(cp)
-    let out = ""
-    let loaded = false
-    cp.stderr.on("data", (data) => {
-        if (loaded) {
-            return
+    const rootLocation = findRootLocation(filePath)
+
+    const window = new BrowserWindow({
+        width: 800,
+        height: 600,
+        webPreferences: {
         }
+    })
+
+    const pyenv = fs.existsSync(path.join(process.env.HOME, ".pyenv"))
+    const command = pyenv ? path.join(process.env.HOME, ".pyenv", "shims", "jupyter") : "jupyter"
+    const cp = childProcess.spawn(command, ["notebook"], {
+        cwd: rootLocation,
+    })
+
+    const newWindow = {
+        root: rootLocation,
+        window,
+        process: cp
+    }
+
+    windows[rootLocation] = newWindow
+
+    window.on('closed', () => {
+        cp.kill()
+        windows[rootLocation] = null
+    })
+
+    let out = ""
+    const dataListener = (data) => {
         out += data.toString()
         const match = out.match(/http:\/\/.*/)
         if (match) {
-            loaded = true
-            win.loadURL(match[0])
+
+            window.loadURL(match[0])
+            const url = match[0].split("?")[0]
+            newWindow.url = url
+
             // "data"のlistenを中止。
-            // cp.stderr.on("data", null)
-            const fp = filePath.substring(rootLocation.length)
-            const url = `${match[0].split("?")[0]}notebooks${fp}`
+            cp.stderr.off("data", dataListener)
+
             setTimeout(() => {
-                win.loadURL(url)
+                window.loadURL(createUrl(url, rootLocation, filePath))
             }, 1000)
         }
-    })
+    }
+    cp.stderr.on("data", dataListener)
+}
+
+const createUrl = (url, root, filePath) => {
+    return `${url}notebooks${filePath.substring(root.length)}`
+}
+
+const openFile = (window, filePath) => {
+    const url = createUrl(window.url, window.root, filePath)
+    window.window.loadURL(url)
+    window.window.focus()
 }
 
 function createWindow() {
@@ -59,24 +118,28 @@ function createWindow() {
     })
 
     win.loadFile("index.html")
-    //win.webContents.openDevTools()
-
-    // const filePath = "/Users/pluswing/develop/electron/Untitled.ipynb"
-    // startNotebook(filePath)
 
     win.on('closed', () => {
         win = null
-        console.log("*** KILL PROCESSES")
-        processes.map((p) => p.kill())
-        processes = []
     })
 }
 
-app.on('ready', createWindow)
-app.on('open-file', (event, filePath) => {
-    // console.log(filePath);
-    startNotebook(filePath)
-    // ファイルが渡ってきたときの処理
+app.on('ready', () => {
+    ready = true
+    if (openUrlFilePath) {
+        startNotebook(openUrlFilePath)
+        openUrlFilePath = ""
+    } else {
+        createWindow()
+    }
+})
+
+app.on('open-file', (_, filePath) => {
+    if (!ready) {
+        openUrlFilePath = filePath
+    } else {
+        startNotebook(filePath)
+    }
 })
 
 app.on('window-all-closed', () => {
@@ -86,7 +149,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('activate', () => {
-    if (win === null) {
+    if (win === null && Object.keys(windows).length == 0) {
         createWindow()
     }
 })

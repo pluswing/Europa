@@ -1,6 +1,6 @@
 {
   "name": "europa",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "main.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "dist": "electron-builder"
   },
   "author": "pluswing Inc.",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "electron": "^6.0.5",
     "electron-builder": "^21.2.0"

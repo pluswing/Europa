@@ -1,10 +1,10 @@
 # Europa
-Jupyter Notebookを手軽に使えるようにする専用ブラウザです。
+A dedicated browser that makes it easy to use Jupyter Notebook.
 
 # Features
-- .ipynbファイルを開くと、自動的にjupyter notebookが起動
-- jupyter notebookの終了も自動的行う
-- 複数jupyter notebookサーバ対応
+- Jupyter Notebook starts automatically when opening .ipynb file.
+- End of Jupyter Notebook automatically.
+- Supports multiple jupyter notebook servers
 
 # Screenshots
-　...
+https://youtu.be/mlzYcUkdST4

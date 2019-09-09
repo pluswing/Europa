@@ -61,7 +61,7 @@ const startNotebook = (filePath) => {
 
     const pyenv = fs.existsSync(path.join(process.env.HOME, ".pyenv"))
     const command = pyenv ? path.join(process.env.HOME, ".pyenv", "shims", "jupyter") : "jupyter"
-    const cp = childProcess.spawn(command, ["notebook"], {
+    const cp = childProcess.spawn(command, ["notebook", "--no-browser"], {
         cwd: rootLocation,
     })
 

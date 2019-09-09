@@ -1,14 +1,48 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Europa</title>
+        <style>
+            .wrap {
+                width: 100%;
+                height: 500px;
+                position: relative;
+            }
+            .wrap .inner {
+                width: 50%;
+                height: 50%;
+                position: absolute;
+                text-align: center;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: auto;
+            }
+            .wrap .logo {
+                width:256px;
+                height:256px;
+            }
+            .wrap .text {
+                margin-top:20px;
+            }
+        </style>
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Jupyter App</title>
-</head>
+    <body>
+        <div class="wrap">
+            <div class="inner">
 
-<body>
-    <h1>Jupyter App</h1>
-    please drag&drop ipynb file to app icon.
-</body>
+                <img class="logo"
+                    src="resources/icons//jupyter_app.iconset/icon_512x512.png"
+                    />
+                <br/>
+                    <div class="text">
+                        please drag&drop .ipynb file to app icon.
+                    </div>
+                </div>
+            </div>
+        </body>
 
-</html>
+    </html>

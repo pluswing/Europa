@@ -19,7 +19,7 @@
     "appId": "jp.co.pluswing.jupyer_app",
     "mac": {
       "category": "jp.co.pluswing.jupyer_app",
-      "icon": "resources/icons/jupyter_app.icns",
+      "icon": "resources/icons/europa.icns",
       "fileAssociations": [
         {
           "ext": "ipynb",

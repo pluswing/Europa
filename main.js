@@ -75,7 +75,7 @@ const startNotebook = (filePath) => {
 
     window.on('closed', () => {
         cp.kill()
-        windows[rootLocation] = null
+        delete(windows[rootLocation])
     })
 
     let out = ""

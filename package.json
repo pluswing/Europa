@@ -29,6 +29,11 @@
           "ext": "ipynb",
           "name": "Jupyter Notebook",
           "role": "Viewer"
+        },
+        {
+          "ext": "*",
+          "name": "Folder",
+          "role": "Viewer"
         }
       ]
     }

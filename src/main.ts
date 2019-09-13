@@ -22,6 +22,10 @@ const findWindow = (filePath: string): IWindow | null => {
 };
 
 const findRootLocation = (filePath: string): string => {
+  // フォルダなら、そのままのパスを返す
+  if (fs.statSync(filePath).isDirectory()) {
+    return filePath;
+  }
   return findRootLocationInternal(filePath) || path.dirname(filePath);
 };
 
@@ -92,6 +96,11 @@ const startNotebook = (filePath: string) => {
       // "data"のlistenを中止。
       cp.stderr.off("data", dataListener);
 
+      // フォルダを開く場合は、ファイルじゃないので開かない。
+      if (fs.statSync(filePath).isDirectory()) {
+        return;
+      }
+
       setTimeout(() => {
         window.loadURL(createUrl(url, rootLocation, filePath));
       }, 1000);
@@ -101,7 +110,8 @@ const startNotebook = (filePath: string) => {
 };
 
 const createUrl = (url: string, root: string, filePath: string): string => {
-  return `${url}notebooks${filePath.substring(root.length)}`;
+  const p = filePath.endsWith(".ipynb") ? "notebooks" : "edit";
+  return `${url}${p}${filePath.substring(root.length)}`;
 };
 
 const openFile = (window: IWindow, filePath: string): void => {

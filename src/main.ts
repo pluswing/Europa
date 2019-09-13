@@ -1,5 +1,5 @@
 import * as childProcess from "child_process";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -15,6 +15,49 @@ interface IWindow {
 }
 
 const windows: { [key: string]: IWindow } = {};
+
+const refreshMenu = () => {
+  const isMac = process.platform === "darwin";
+  const submenu: MenuItemConstructorOptions[] = [
+    { role: "about" },
+    { type: "separator" },
+    { role: "services" },
+    { type: "separator" },
+    { role: "hide" },
+    { role: "unhide" },
+    { type: "separator" },
+    { role: "quit" },
+  ];
+  const serverSubmenu: MenuItemConstructorOptions[] = Object.keys(windows).map((k) => {
+    return {
+      click: async () => {
+        windows[k].window.focus();
+      },
+      label: k,
+      submenu: [
+        {
+          click: async () => {
+            windows[k].window.focus();
+          },
+          label: windows[k].url,
+        },
+      ],
+    };
+  });
+  const template: MenuItemConstructorOptions[] = [
+    ...(isMac ? [{
+      label: app.getName(),
+      submenu,
+    }] : []),
+    {
+      label: "Servers",
+      submenu: serverSubmenu,
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+};
 
 const findWindow = (filePath: string): IWindow | null => {
   const rootLocation = findRootLocation(filePath);
@@ -81,6 +124,7 @@ const startNotebook = (filePath: string) => {
   window.on("closed", () => {
     cp.kill();
     delete (windows[rootLocation]);
+    refreshMenu();
   });
 
   let out = "";
@@ -92,6 +136,8 @@ const startNotebook = (filePath: string) => {
       window.loadURL(match[0]);
       const url = match[0].split("?")[0];
       newWindow.url = url;
+
+      refreshMenu();
 
       // "data"のlistenを中止。
       cp.stderr.off("data", dataListener);
@@ -135,6 +181,7 @@ function createWindow() {
 
 app.on("ready", () => {
   ready = true;
+  refreshMenu();
   if (openUrlFilePath) {
     startNotebook(openUrlFilePath);
     openUrlFilePath = "";

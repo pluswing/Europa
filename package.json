@@ -1,6 +1,6 @@
 {
   "name": "europa",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "compiled/main.js",
   "scripts": {
@@ -21,6 +21,7 @@
   },
   "build": {
     "appId": "jp.co.pluswing.jupyer_app",
+    "productName": "Europa",
     "mac": {
       "category": "jp.co.pluswing.jupyer_app",
       "icon": "resources/icons/europa.icns",

@@ -1,48 +1,65 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Europa</title>
-        <style>
-            .wrap {
-                width: 100%;
-                height: 500px;
-                position: relative;
-            }
-            .wrap .inner {
-                width: 50%;
-                height: 50%;
-                position: absolute;
-                text-align: center;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                margin: auto;
-            }
-            .wrap .logo {
-                width:256px;
-                height:256px;
-            }
-            .wrap .text {
-                margin-top:20px;
-            }
-        </style>
-    </head>
 
-    <body>
-        <div class="wrap">
-            <div class="inner">
+<head>
+  <meta charset="UTF-8">
+  <title>Europa</title>
+  <style>
+    .wrap {
+      width: 100%;
+      height: 500px;
+      position: relative;
+    }
 
-                <img class="logo"
-                    src="resources/icons//europa.iconset/icon_512x512.png"
-                    />
-                <br/>
-                    <div class="text">
-                        please drag&drop .ipynb file to app icon.
-                    </div>
-                </div>
-            </div>
-        </body>
+    .wrap .inner {
+      width: 50%;
+      height: 50%;
+      position: absolute;
+      text-align: center;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+    }
 
-    </html>
+    .wrap .logo {
+      width: 256px;
+      height: 256px;
+    }
+
+    .wrap .text {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="inner">
+
+      <img class="logo" src="resources/icons//europa.iconset/icon_512x512.png" />
+      <br />
+      <div class="text">
+        please drag&drop .ipynb file to app icon.
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" charset="utf-8">
+    const { ipcRenderer } = require('electron');
+    document.ondragover =
+      document.ondragenter =
+      document.ondrop =
+      document.ondragleave = (e) => {
+        e.preventDefault();
+        if (e.type != "drop") {
+          return;
+        }
+        // 複数ファイルをドラッグされても最初のファイルだけ見る
+        const file = e.dataTransfer.files[0];
+        ipcRenderer.send('drop', file.path);
+      };
+  </script>
+</body>
+
+</html>

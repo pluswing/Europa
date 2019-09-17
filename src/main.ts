@@ -1,5 +1,5 @@
 import * as childProcess from "child_process";
-import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -169,10 +169,14 @@ const openFile = (window: IWindow, filePath: string): void => {
 function createWindow() {
   win = new BrowserWindow({
     height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+    },
     width: 800,
   });
 
   win.loadFile("index.html");
+  // win.webContents.openDevTools();
 
   win.on("closed", () => {
     win = null;
@@ -196,6 +200,10 @@ app.on("open-file", (_, filePath) => {
   } else {
     startNotebook(filePath);
   }
+});
+
+ipcMain.on("drop", (_, filePath) => {
+  startNotebook(filePath);
 });
 
 app.on("window-all-closed", () => {

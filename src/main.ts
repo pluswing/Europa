@@ -1,11 +1,13 @@
 import * as childProcess from "child_process";
 import { app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions } from "electron";
+import Store from "electron-store";
 import * as fs from "fs";
 import * as path from "path";
 
 let ready = false;
 let openUrlFilePath = "";
 let win: BrowserWindow | null = null;
+const store = new Store();
 
 interface IWindow {
   root: string;
@@ -100,9 +102,18 @@ const startNotebook = (filePath: string) => {
 
   const rootLocation = findRootLocation(filePath);
 
+  const widthKey = `window-size-width:${rootLocation}`;
+  const heightKey = `window-size-height:${rootLocation}`;
+  const width = store.get(widthKey) || 800;
+  const height = store.get(heightKey) || 600;
+
   const window = new BrowserWindow({
-    height: 600,
-    width: 800,
+    height,
+    width,
+  });
+  window.on("resize", () => {
+    store.set(widthKey, window.getSize()[0]);
+    store.set(heightKey, window.getSize()[1]);
   });
 
   const home = process.env.HOME || "";

@@ -1,5 +1,5 @@
 import * as childProcess from "child_process";
-import { app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, MenuItem, MenuItemConstructorOptions } from "electron";
 import Store from "electron-store";
 import * as fs from "fs";
 import * as path from "path";
@@ -46,11 +46,25 @@ const refreshMenu = () => {
       ],
     };
   });
+  const editMenu: MenuItemConstructorOptions = {
+    label: "Edit",
+    submenu: [
+      { role: "undo" },
+      { role: "redo" },
+      { type: "separator" },
+      { role: "cut" },
+      { role: "copy" },
+      { role: "paste" },
+      { role: "delete" },
+      { role: "selectAll" },
+    ],
+  };
   const template: MenuItemConstructorOptions[] = [
     ...(isMac ? [{
       label: app.getName(),
       submenu,
     }] : []),
+    editMenu,
     {
       label: "Servers",
       submenu: serverSubmenu,

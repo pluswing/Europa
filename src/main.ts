@@ -98,6 +98,7 @@ const findRootLocationInternal = (filePath: string): string | null => {
     return [
       ".git",
       "requirements.txt",
+      ".ipynbroot",
     ].includes(f);
   });
   if (matches.length) {

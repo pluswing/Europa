@@ -14,6 +14,7 @@ interface IWindow {
   window: BrowserWindow;
   process: childProcess.ChildProcess;
   url: string;
+  filePath: string;
 }
 
 const windows: { [key: string]: IWindow } = {};
@@ -30,18 +31,34 @@ const refreshMenu = () => {
     { type: "separator" },
     { role: "quit" },
   ];
-  const serverSubmenu: MenuItemConstructorOptions[] = Object.keys(windows).map((k) => {
+  const serverSubmenu: MenuItemConstructorOptions[] = Object.keys(windows).map((root) => {
     return {
-      click: async () => {
-        windows[k].window.focus();
-      },
-      label: k,
+      label: root,
       submenu: [
         {
           click: async () => {
-            windows[k].window.focus();
+            // open browser
+            // TODO macに依存。他のプラットフォームの実装もする必要あり。
+            childProcess.execSync(`open ${windows[root].url}`);
           },
-          label: windows[k].url,
+          label: windows[root].url,
+        },
+        {
+          click: async () => {
+            windows[root].window.focus();
+          },
+          label: "Activate",
+        },
+        {
+          click: async () => {
+            const filePath = windows[root].filePath;
+            windows[root].window.close();
+            // setTimeoutしないと、新しいウインドウが開かない。。
+            setTimeout(() => {
+              startNotebook(filePath);
+            }, 100);
+          },
+          label: "Reboot",
         },
       ],
     };
@@ -139,6 +156,7 @@ const startNotebook = (filePath: string) => {
   });
 
   const newWindow: IWindow = {
+    filePath,
     process: cp,
     root: rootLocation,
     url: "",

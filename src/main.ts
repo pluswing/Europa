@@ -1,8 +1,58 @@
 import * as childProcess from "child_process";
-import { app, BrowserWindow, ipcMain, Menu, MenuItem, MenuItemConstructorOptions } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItemConstructorOptions } from "electron";
 import Store from "electron-store";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
+
+// TODO: 型定義作る
+// tslint:disable-next-line: no-var-requires
+const ElectronPreferences = require("electron-preferences");
+
+const preferences = new ElectronPreferences({
+  dataStore: path.resolve(app.getPath("userData"), "preferences.json"),
+  defaults: {
+    setting: {
+      command_path: "",
+      use_lab: false,
+    },
+  },
+  onLoad: (aPreferences: any) => {
+    return aPreferences;
+  },
+  sections: [
+    {
+      id: "setting",
+      label: "Setting",
+      icon: "settings-gear-63",
+      form: {
+        groups: [
+          {
+            label: "jupyter setting",
+            fields: [
+              {
+                label: "command path",
+                key: "command_path",
+                type: "text",
+                help: "",
+              },
+              {
+                label: "use lab",
+                key: "use_lab",
+                type: "radio",
+                options: [
+                  { label: "notebook", value: false },
+                  { label: "lab", value: true },
+                ],
+                help: "",
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+});
 
 let ready = false;
 let openUrlFilePath = "";
@@ -23,6 +73,13 @@ const refreshMenu = () => {
   const isMac = process.platform === "darwin";
   const submenu: MenuItemConstructorOptions[] = [
     { role: "about" },
+    { type: "separator" },
+    { // TODO: macのmenu onlyなので、他のプラットフォームに対応するときに注意！
+      label: "Setting",
+      click: () => {
+        preferences.show();
+      },
+    },
     { type: "separator" },
     { role: "services" },
     { type: "separator" },
@@ -165,7 +222,9 @@ const startNotebook = (filePath: string) => {
 
   windows[rootLocation] = newWindow;
 
+  let userClosed = false;
   window.on("closed", () => {
+    userClosed = true;
     cp.kill();
     delete (windows[rootLocation]);
     refreshMenu();
@@ -197,6 +256,16 @@ const startNotebook = (filePath: string) => {
     }
   };
   cp.stderr.on("data", dataListener);
+
+  const closeDataListener = (data: Buffer) => {
+    cp.stderr.off("close", closeDataListener);
+    if (userClosed) { return; }
+
+    // 意図せぬcloseなので、エラーを表示する。
+    // TODO メッセージを良い感じにする
+    dialog.showErrorBox("jupyter boot error.", command);
+  };
+  cp.stderr.on("close", closeDataListener);
 };
 
 const createUrl = (url: string, root: string, filePath: string): string => {

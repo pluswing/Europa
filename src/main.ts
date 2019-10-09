@@ -1,152 +1,21 @@
 import * as childProcess from "child_process";
-import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItemConstructorOptions } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import Store from "electron-store";
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
-
-// TODO: 型定義作る
-// tslint:disable-next-line: no-var-requires
-const ElectronPreferences = require("electron-preferences");
-
-const preferences = new ElectronPreferences({
-  dataStore: path.resolve(app.getPath("userData"), "preferences.json"),
-  defaults: {
-    setting: {
-      command_path: "",
-      use_lab: false,
-    },
-  },
-  onLoad: (aPreferences: any) => {
-    return aPreferences;
-  },
-  sections: [
-    {
-      id: "setting",
-      label: "Setting",
-      icon: "settings-gear-63",
-      form: {
-        groups: [
-          {
-            label: "jupyter setting",
-            fields: [
-              {
-                label: "command path",
-                key: "command_path",
-                type: "text",
-                help: "",
-              },
-              {
-                label: "use lab",
-                key: "use_lab",
-                type: "radio",
-                options: [
-                  { label: "notebook", value: false },
-                  { label: "lab", value: true },
-                ],
-                help: "",
-              },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-});
+import refreshMenu from "./menu";
+import preferences from "./preferences";
+import { IWindow, IWindowDict } from "./types";
 
 let ready = false;
 let openUrlFilePath = "";
 let win: BrowserWindow | null = null;
 const store = new Store();
 
-interface IWindow {
-  root: string;
-  window: BrowserWindow;
-  process: childProcess.ChildProcess;
-  url: string;
-  filePath: string;
-}
+const windows: IWindowDict = {};
 
-const windows: { [key: string]: IWindow } = {};
-
-const refreshMenu = () => {
-  const isMac = process.platform === "darwin";
-  const submenu: MenuItemConstructorOptions[] = [
-    { role: "about" },
-    { type: "separator" },
-    { // TODO: macのmenu onlyなので、他のプラットフォームに対応するときに注意！
-      label: "Setting",
-      click: () => {
-        preferences.show();
-      },
-    },
-    { type: "separator" },
-    { role: "services" },
-    { type: "separator" },
-    { role: "hide" },
-    { role: "unhide" },
-    { type: "separator" },
-    { role: "quit" },
-  ];
-  const serverSubmenu: MenuItemConstructorOptions[] = Object.keys(windows).map((root) => {
-    return {
-      label: root,
-      submenu: [
-        {
-          click: async () => {
-            // open browser
-            // TODO macに依存。他のプラットフォームの実装もする必要あり。
-            childProcess.execSync(`open ${windows[root].url}`);
-          },
-          label: windows[root].url,
-        },
-        {
-          click: async () => {
-            windows[root].window.focus();
-          },
-          label: "Activate",
-        },
-        {
-          click: async () => {
-            const filePath = windows[root].filePath;
-            windows[root].window.close();
-            // setTimeoutしないと、新しいウインドウが開かない。。
-            setTimeout(() => {
-              startNotebook(filePath);
-            }, 100);
-          },
-          label: "Reboot",
-        },
-      ],
-    };
-  });
-  const editMenu: MenuItemConstructorOptions = {
-    label: "Edit",
-    submenu: [
-      { role: "undo" },
-      { role: "redo" },
-      { type: "separator" },
-      { role: "cut" },
-      { role: "copy" },
-      { role: "paste" },
-      { role: "delete" },
-      { role: "selectAll" },
-    ],
-  };
-  const template: MenuItemConstructorOptions[] = [
-    ...(isMac ? [{
-      label: app.getName(),
-      submenu,
-    }] : []),
-    editMenu,
-    {
-      label: "Servers",
-      submenu: serverSubmenu,
-    },
-  ];
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+const showPreference = () => {
+  preferences.show();
 };
 
 const findWindow = (filePath: string): IWindow | null => {
@@ -205,10 +74,14 @@ const startNotebook = (filePath: string) => {
     store.set(heightKey, window.getSize()[1]);
   });
 
+  const commandPath = preferences.value("setting.command_path");
+  const arg1 = preferences.value("setting.use_lab") ? "lab" : "notebook";
+
   const home = process.env.HOME || "";
   const pyenv = fs.existsSync(path.join(home, ".pyenv"));
-  const command = pyenv ? path.join(home, ".pyenv", "shims", "jupyter") : "jupyter";
-  const cp = childProcess.spawn(command, ["notebook", "--no-browser"], {
+  const command = commandPath ? commandPath : pyenv ? path.join(home, ".pyenv", "shims", "jupyter") : "jupyter";
+
+  const cp = childProcess.spawn(command, [arg1, "--no-browser"], {
     cwd: rootLocation,
   });
 
@@ -227,7 +100,7 @@ const startNotebook = (filePath: string) => {
     userClosed = true;
     cp.kill();
     delete (windows[rootLocation]);
-    refreshMenu();
+    refreshMenu(windows, showPreference, startNotebook);
   });
 
   let out = "";
@@ -240,7 +113,7 @@ const startNotebook = (filePath: string) => {
       const url = match[0].split("?")[0];
       newWindow.url = url;
 
-      refreshMenu();
+      refreshMenu(windows, showPreference, startNotebook);
 
       // "data"のlistenを中止。
       cp.stderr.off("data", dataListener);
@@ -257,15 +130,21 @@ const startNotebook = (filePath: string) => {
   };
   cp.stderr.on("data", dataListener);
 
-  const closeDataListener = (data: Buffer) => {
-    cp.stderr.off("close", closeDataListener);
+  // command_pathはあるが、実行に失敗した場合。
+  cp.on("close", (data: Buffer) => {
     if (userClosed) { return; }
 
     // 意図せぬcloseなので、エラーを表示する。
     // TODO メッセージを良い感じにする
-    dialog.showErrorBox("jupyter boot error.", command);
-  };
-  cp.stderr.on("close", closeDataListener);
+    window.close();
+    dialog.showErrorBox("failed run jupyter", `you shoud install jupyter notebook or jupyter lab\n\n${out}`);
+  });
+
+  // command_pathが間違えている場合。
+  cp.on("error", (err) => {
+    window.close();
+    dialog.showErrorBox("failed run jupyter", `incorrect command path\n\n${err.message}`);
+  });
 };
 
 const createUrl = (url: string, root: string, filePath: string): string => {
@@ -298,7 +177,7 @@ function createWindow() {
 
 app.on("ready", () => {
   ready = true;
-  refreshMenu();
+  refreshMenu(windows, showPreference, startNotebook);
   if (openUrlFilePath) {
     startNotebook(openUrlFilePath);
     openUrlFilePath = "";

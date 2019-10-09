@@ -1,9 +1,7 @@
 import { app } from "electron";
 import * as path from "path";
 
-// TODO: 型定義作る
-// tslint:disable-next-line: no-var-requires
-const ElectronPreferences = require("electron-preferences");
+import ElectronPreferences from "electron-preferences";
 
 const preferences = new ElectronPreferences({
   dataStore: path.resolve(app.getPath("userData"), "preferences.json"),
@@ -13,7 +11,7 @@ const preferences = new ElectronPreferences({
       use_lab: false,
     },
   },
-  onLoad: (aPreferences: any) => {
+  onLoad: (aPreferences: ElectronPreferences) => {
     return aPreferences;
   },
   sections: [

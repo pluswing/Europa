@@ -2,7 +2,7 @@ import * as childProcess from "child_process";
 import { app, Menu, MenuItemConstructorOptions } from "electron";
 import { IWindowDict } from "./types";
 
-const refreshMenu = (windows: IWindowDict, showPreferece: () => void, startNotebook: (path: string) => void) => {
+const refreshMenu = (windows: IWindowDict, showPreference: () => void, startNotebook: (path: string) => void) => {
   const isMac = process.platform === "darwin";
   const submenu: MenuItemConstructorOptions[] = [
     { role: "about" },
@@ -10,7 +10,7 @@ const refreshMenu = (windows: IWindowDict, showPreferece: () => void, startNoteb
     { // TODO: macのmenu onlyなので、他のプラットフォームに対応するときに注意！
       label: "Setting",
       click: () => {
-        showPreferece();
+        showPreference();
       },
     },
     { type: "separator" },

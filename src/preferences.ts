@@ -1,7 +1,6 @@
 import { app } from "electron";
-import * as path from "path";
-
 import ElectronPreferences from "electron-preferences";
+import * as path from "path";
 
 const preferences = new ElectronPreferences({
   dataStore: path.resolve(app.getPath("userData"), "preferences.json"),

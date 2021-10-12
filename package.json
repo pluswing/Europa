@@ -14,7 +14,7 @@
   "author": "pluswing Inc.",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^6.0.5",
+    "electron": "^11.5.0",
     "electron-builder": "^21.2.0",
     "tslint": "^5.20.0",
     "typescript": "^3.6.3"
